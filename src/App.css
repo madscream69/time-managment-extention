@@ -19,7 +19,18 @@
 
     z-index: 0;
 }
+
+.info {
+    width: 100%;
+    display: flex;
+}
+
 .about-photo {
+    transition: all 0.5s ease;
+    cursor: pointer;
+    opacity: 0.7;
+
+    justify-content: start;
     position: relative;
     z-index: 1;
     bottom: 0;
@@ -35,8 +46,15 @@
     backdrop-filter: blur(5px);
 
     margin-bottom: 10px;
+    margin-left: 20px;
 }
+.about-photo--active {
+    transition: all 0.5s ease;
 
+    width: fit-content;
+    opacity: 1;
+    transition: 1;
+}
 .author,
 .original-img {
     color: #fff;
@@ -55,10 +73,17 @@
 }
 
 .time {
+    width: 100%;
+    text-align: center;
+    line-height: 170px;
     z-index: 1;
 }
 .time__title {
     font-size: 200px;
     color: #fff;
     opacity: 90%;
+}
+/* ON FOCUS */
+.onFocus {
+    z-index: 1;
 }

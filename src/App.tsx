@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import './App.css';
+import Focus from './components/Focus';
 
 function App() {
     interface Photo {
@@ -27,6 +28,8 @@ function App() {
     const [bg, setBg] = useState('');
     const [dataP, setDataP] = useState<Photo>();
     const [time, setTime] = useState(new Date());
+    const [activeAboutPhoto, SetActiveAboutPhoto] = useState(false);
+    const [focus, setFocus] = useState(false);
 
     useEffect(() => {
         async function getBg() {
@@ -89,23 +92,63 @@ function App() {
     }`;
     return (
         <>
-            <div className="background">
+            {focus ? <Focus /> : <></>}
+            <div
+                onClick={() => {
+                    setFocus(focus && false);
+                    console.log('parent');
+                }}
+                className="background"
+            >
                 <img className="background-img" src={bg} alt="bg" />
-                <p>smth</p>
+                <div className="onFocus">
+                    <p
+                        className="focus-text"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setFocus(!focus);
+                            console.log('child');
+                        }}
+                    >
+                        Let's focus right now!
+                    </p>
+                </div>
                 <div className="time">
                     <h1 className="time__title">{timeString}</h1>
                 </div>
-                <div className="about-photo">
-                    <p className="author">Photographer: </p>
-                    <a href={dataP?.photographer_url} className="author-link">
-                        {dataP?.photographer}
-                    </a>
-                    <p className="original-img">Original: </p>
-                    <a href={dataP?.url} className="img-link">
-                        {dataP?.alt && dataP?.alt?.length > 20
-                            ? `${dataP?.alt?.slice(0, 20)}...`
-                            : dataP?.alt}
-                    </a>
+                <div className="info">
+                    <div
+                        className={`about-photo ${
+                            activeAboutPhoto ? 'about-photo--active' : ''
+                        }`}
+                        onClick={() => SetActiveAboutPhoto(!activeAboutPhoto)}
+                    >
+                        {activeAboutPhoto ? (
+                            <>
+                                <p className="author">Photographer: </p>
+                                <a
+                                    href={dataP?.photographer_url}
+                                    className="author-link"
+                                >
+                                    {dataP?.photographer &&
+                                    dataP?.photographer?.length > 20
+                                        ? `${dataP?.photographer?.slice(
+                                              0,
+                                              20
+                                          )}...`
+                                        : dataP?.photographer}
+                                </a>
+                                <p className="original-img">Original: </p>
+                                <a href={dataP?.url} className="img-link">
+                                    {dataP?.alt && dataP?.alt?.length > 20
+                                        ? `${dataP?.alt?.slice(0, 20)}...`
+                                        : dataP?.alt}
+                                </a>
+                            </>
+                        ) : (
+                            <p className="original-img">More about photo...</p>
+                        )}
+                    </div>
                 </div>
             </div>
         </>
