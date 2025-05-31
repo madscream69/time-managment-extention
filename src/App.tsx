@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import Focus from './components/Focus';
-
 function App() {
     interface Photo {
         id: number;
