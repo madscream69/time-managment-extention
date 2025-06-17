@@ -1,5 +1,5 @@
 .pomodoro-timer {
-    width: 80%;
+    width: 100%;
     height: 80%;
     position: absolute;
     top: 50%;
@@ -76,4 +76,9 @@
 
 .controls button:hover {
     background-color: #0056b3;
+}
+
+.icon-btn {
+    width: 10px;
+    height: 10px;
 }

@@ -3,60 +3,70 @@ import worker_script from '../Worker/worker';
 import './Focus.css';
 import sound from '../assets/sounds/tictictictic.mp3';
 
+import play from '../assets/play-icon.svg';
+import pause from '../assets/pause-icon.svg';
+
 const timerWorker = new Worker(worker_script);
 
-const Focus = () => {
+interface funcProps{
+    disableFunc: ()=>void
+}
+
+const Focus = ({disableFunc}:funcProps) => {
     const durations = { work: 25 * 60, break: 5 * 60 }; // Added: длительности для режимов (в секундах)
     const [mode, setMode] = useState<'work' | 'break'>('work'); // Added: состояние режима
     const [isActive, setIsActive] = useState(false);
     const [isAutomatic, setIsAutomatic] = useState(true);
-
-    //NEW with web worker
+    const [isAutoplay, setIsAutoplay] = useState(false);
     const [webWorkerTime, setWebWorkerTime] = useState(durations.work);
-
+    const audio = new Audio(sound);
+    audio.preload = 'auto';
     useEffect(() => {
-        timerWorker.onmessage = ({ data: { time } }) => {
-            setWebWorkerTime(time);
-        };
-    }, []);
+        if (isActive) {
+            timerWorker.onmessage = ({ data: { time } }) => {
+                setWebWorkerTime(time);
+            };
+        }
+    }, [isActive]);
+    useEffect(() => {
+        if (webWorkerTime === 0) {
+            audio.play();
+            setIsActive(false);
+            if (isAutomatic) {
+                setMode(mode === 'work' ? 'break' : 'work');
+                setWebWorkerTime(
+                    mode === 'work' ? durations.break : durations.work
+                );
+                setIsAutoplay(true);
+            }
+        }
+    }, [webWorkerTime]);
+    useEffect(() => {
+        if (isAutomatic && webWorkerTime > 0 && !isActive && isAutoplay) {
+            startWebWorkerTimer();
+            // setIsActive(true);
+        }
+    }, [mode, webWorkerTime]);
     const startWebWorkerTimer = () => {
-        timerWorker.postMessage({ turn: 'on', time: webWorkerTime });
+        if (webWorkerTime !== 0) {
+            timerWorker.postMessage({ turn: 'on', time: webWorkerTime });
+        }
+        // else if (webWorkerTime <= 0 && isAutomatic) {
+        //     setIsActive(true);
+        // } else {
+        //     setIsActive(false);
+        // }
     };
     const pauseWebWorkerTimer = () => {
         timerWorker.postMessage({ turn: 'pause', time: webWorkerTime });
     };
     const resetWebWorkerTimer = () => {
-        timerWorker.postMessage({ turn: 'off', time: durations[mode] });
-
-        setWebWorkerTime(durations[mode]);
         setIsActive(false);
+        timerWorker.postMessage({ turn: 'off', time: durations[mode] });
+        setWebWorkerTime(durations[mode]);
+        setIsAutoplay(false);
     };
-    var audio = new Audio(sound);
-    audio.preload = 'auto';
 
-    // Обновление таймера
-    // useEffect(() => {
-    //     let interval: NodeJS.Timeout | null = null;
-
-    //     if (isActive && seconds > 0) {
-    //         interval = setInterval(() => {
-    //             setSeconds((prev) => prev - 1);
-    //         }, 1000);
-    //     } else if (seconds === 0) {
-    //         audio.play();
-    //         setIsActive(false);
-    //         if (isAutomatic) {
-    //             switchMode(mode === 'work' ? 'break' : 'work');
-    //             setIsActive(true);
-    //         }
-    //     }
-
-    //     return () => {
-    //         if (interval) clearInterval(interval);
-    //     };
-    // }, [isActive, seconds]);
-
-    // Форматирование времени в MM:SS
     const formatTime = (time: number): string => {
         const minutes = Math.floor(time / 60);
         const secs = time % 60;
@@ -65,28 +75,18 @@ const Focus = () => {
             .padStart(2, '0')}`;
     };
 
-    // Запуск/пауза
-    // const toggleTimer = () => {
-    //     setIsActive(!isActive);
-    // };
-
-    // // Сброс таймера
-    // const resetTimer = () => {
-    //     setIsActive(false);
-    //     setSeconds(durations[mode]); // Added: сбрасываем в зависимости от режима
-    // };
-
-    // Переключение режима
     const switchMode = (newMode: 'work' | 'break') => {
         resetWebWorkerTimer();
         setMode(newMode);
         setWebWorkerTime(newMode === 'work' ? durations.work : durations.break);
+        setIsAutoplay(false);
 
         setIsActive(false); // Останавливаем таймер
     };
 
     return (
         <div className="pomodoro-timer">
+            <button onClick={disableFunc} className="close-btn">close</button>
             <h2>{formatTime(webWorkerTime)}</h2>
             <div className="mode-controls">
                 <button
@@ -114,7 +114,11 @@ const Focus = () => {
                         }
                     }}
                 >
-                    {isActive ? 'Pause' : 'Start'}
+                    <img
+                        className="icon-btn"
+                        src={isActive ? pause : play}
+                        alt=""
+                    />
                 </button>
                 {/* <button onClick={startWebWorkerTimer}>Start</button>
                 <button
