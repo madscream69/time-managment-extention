@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import './App.scss';
 import Focus from './components/Focus';
+import Timer from "./components/Timer.tsx";
 
 // Интерфейс для данных Unsplash
 interface Photo {
@@ -117,7 +118,8 @@ function App() {
 
     return (
         <>
-            {focus && <Focus disableFunc={disableInterface}/>}
+            {/*{focus && <Focus disableFunc={disableInterface}/>}*/}
+            <Timer initialTime = {1500000}></Timer>
             <div
                 onClick={() => {
                     setFocus(focus && false);

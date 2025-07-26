@@ -1,30 +1,34 @@
-/* eslint-disable no-restricted-globals */
+// src/workers/timerWorker.ts
+let intervalId: number | null = null;
+let remainingTime: number = 0;
 
-const workercode = () => {
-    let timerInterval: NodeJS.Timeout;
-    // let time = 25 * 60;
-    self.onmessage = function ({ data: { turn, time } }) {
-        if (turn === 'off' || timerInterval) {
-            clearInterval(timerInterval);
-            // time = 25 * 60;
+self.onmessage = (e: MessageEvent) => {
+    const { command, time } = e.data;
+
+    if (command === 'start') {
+        remainingTime = time;
+        if (intervalId) clearInterval(intervalId);
+        intervalId = setInterval(() => {
+            remainingTime -= 1000;
+            if (remainingTime <= 0) {
+                (self as any).postMessage({ type: 'finished' });
+                clearInterval(intervalId!);
+                intervalId = null;
+            } else {
+                (self as any).postMessage({ type: 'tick', remainingTime });
+            }
+        }, 1000);
+    } else if (command === 'pause') {
+        if (intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
         }
-        if (turn === 'on') {
-            timerInterval = setInterval(() => {
-                time -= 1;
-                if (time >= 0) {
-                    self.postMessage({ time });
-                }
-            }, 1000);
+    } else if (command === 'reset') {
+        if (intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
         }
-        if (turn === 'pause') self.postMessage({ time });
-    };
+        remainingTime = time;
+        (self as any).postMessage({ type: 'tick', remainingTime });
+    }
 };
-
-let code = workercode.toString();
-code = code.substring(code.indexOf('{') + 1, code.lastIndexOf('}'));
-
-const blob = new Blob([code], { type: 'application/javascript' });
-const worker_script = URL.createObjectURL(blob);
-
-// module.exports = worker_script;
-export default worker_script;

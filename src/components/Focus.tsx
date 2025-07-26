@@ -1,6 +1,6 @@
 import {useState, useEffect, useRef} from 'react';
 import './Focus.css';
-import sound from '../assets/sounds/tictictictic.mp3';
+import sound from '../../public/sounds/tictictictic.mp3';
 
 import play from '../assets/play-icon.svg';
 import pause from '../assets/pause-icon.svg';
@@ -21,6 +21,9 @@ const Focus = ({disableFunc}:funcProps) => {
     const [endTime, setEndTime] = useState(0);
     const audio = new Audio(sound);
     audio.preload = 'auto';
+
+
+
 
     const formatTime = (time: number): string => {
         //NEED TO UPGRADE TO MILISECONDS
@@ -109,7 +112,7 @@ const Focus = ({disableFunc}:funcProps) => {
         setEndTime(0);
     }
 
-    const switchMode = (newMode: 'work' | 'break') => {
+    function switchMode  (newMode: 'work' | 'break')  {
         // resetTimer();
         setMode(newMode);
         setRemainingTime(durations[newMode]*1000);
