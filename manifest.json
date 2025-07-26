@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Time Management Extension",
+  "version": "1.0.0",
+  "description": "I will write description later, i promise :)",
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "background": {
+    "service_worker": "background/background.js"
+  },
+  "permissions": [
+    "storage",
+    "notifications" 
+  ]
+}

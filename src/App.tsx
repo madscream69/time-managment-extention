@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import './App.css';
+import './App.scss';
 import Focus from './components/Focus';
 
 // Интерфейс для данных Unsplash
@@ -72,7 +72,7 @@ function App() {
                     url: data.links.html, // Ссылка на страницу изображения
                     alt: data.alt_description || null,
                     photographer: data.user.name || null,
-                    photographer_url: data.user.links.html || null,
+                    photographer_url: data.user.links.html || null || undefined,
                     src: {
                         original: data.urls.full,
                         large: data.urls.regular, // ~1080p
@@ -150,7 +150,7 @@ function App() {
                         {activeAboutPhoto ? (
                             <>
                                 <p className="author">Photographer: </p>
-                                <a href={dataP?.photographer_url} className="author-link">
+                                <a href={dataP?.photographer_url || undefined} className="author-link">
                                     {dataP?.photographer && dataP.photographer.length > 20
                                         ? `${dataP.photographer.slice(0, 20)}...`
                                         : dataP?.photographer || 'Unknown'}
