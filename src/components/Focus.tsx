@@ -1,6 +1,6 @@
 import {useState, useEffect, useRef} from 'react';
 import './Focus.css';
-import sound from '../../public/sounds/tictictictic.mp3';
+import audioSrc from '/sounds/tictictictic.mp3';
 
 import play from '../assets/play-icon.svg';
 import pause from '../assets/pause-icon.svg';
@@ -11,136 +11,100 @@ interface funcProps{
 }
 
 const Focus = ({disableFunc}:funcProps) => {
-    const timeoutRef = useRef<null | ReturnType<typeof setTimeout>>(null);
-    const durations = { work: 25 * 60, break: 5 * 60 }; // Added: длительности для режимов (в секундах)
+    const durations = { work: 25 * 60*1000, break: 0.05 * 60*1000 }; // Added: длительности для режимов (в секундах)
     const [mode, setMode] = useState<'work' | 'break'>('work'); // Added: состояние режима
-    const [isActive, setIsActive] = useState(false);
-    const [isAutoplay, setIsAutoplay] = useState(false);
-    const [startTime, setStartTime] = useState(0);
-    const [remainingTime, setRemainingTime] = useState(durations[mode]*1000);
-    const [endTime, setEndTime] = useState(0);
-    const audio = new Audio(sound);
-    audio.preload = 'auto';
+    const [isAutoplay, setIsAutoplay] = useState(true);
 
+    const [finished, setFinished] = useState<boolean>(false);
 
+    //New Timer
 
+    const [time, setTime] = useState(durations[mode]);
+    const [isRunning, setIsRunning] = useState(false);
+    const workerRef = useRef<Worker | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    const formatTime = (time: number): string => {
-        //NEED TO UPGRADE TO MILISECONDS
-        const minutes = Math.floor(Math.round(time/1000) / 60);
-        const secs = Math.round(time/1000) % 60;
-        return `${minutes.toString().padStart(2, '0')}:${secs
-            .toString()
-            .padStart(2, '0')}`;
+    const startTimer = () => {
+        if (!isRunning && time > 0) {
+            setIsRunning(true);
+            workerRef.current?.postMessage({ command: 'start', time });
+
+        }
     };
 
-    function updateTime(){
-        if (isActive){
-            timeoutRef.current = setTimeout(() => {
-                const newRemainingTime = endTime - Date.now()
-                if (newRemainingTime <= 0) {
-                    audio.play();
-                    pauseTimer();
-                    setIsActive(false);
-                    if(isAutoplay){
-                        switchMode(mode==='work' ? 'break' : "work");
-                        startTimer(mode==='work' ? 'break' : "work");
-                    }
+    const pauseTimer = () => {
+        setIsRunning(false);
+        workerRef.current?.postMessage({ command: 'pause' });
+    };
 
-                }else {
-                    setRemainingTime(newRemainingTime);
-                    updateTime();
-                    console.log(newRemainingTime);
-                }
-            }, 500);
-        }
-    }
+    const resetTimer = () => {
+        setIsRunning(false);
+        setTime(durations[mode]);
+        workerRef.current?.postMessage({ command: 'reset', time: durations[mode] });
+    };
 
-    useEffect(() => {
-        // if (isActive){
-        //     timeoutRef.current = setTimeout(() => {
-        //         if (remainingTime <= 0) {
-        //             audio.play();
-        //             pauseTimer();
-        //             setIsActive(false);
-        //             clearTimeout(timeoutRef.current)
-        //             if(isAutoplay){
-        //                 switchMode(mode==='work' ? 'break' : "work");
-        //                 startTimer();
-        //             }
-        //
-        //         }else {
-        //             setRemainingTime(endTime - Date.now());
-        //             console.log(remainingTime);
-        //         }
-        //     }, 1000);
-        // }
-        updateTime()
-
-        return () => {
-            clearTimeout(timeoutRef.current);
-            timeoutRef.current = null;
-        };
-    }, [ isActive, endTime]);
-
-
-    //  NADO FIXING CHANGE TIMER AUTOMATICALLY
-
-    function startTimer(mode?: 'work' | 'break') {
-        setIsActive(true);
-        const duration = mode ? durations[mode]*1000 : remainingTime;
-        setRemainingTime(duration);
-        setStartTime(Date.now());
-        setEndTime(Date.now()+duration);
-
-    }
-
-    function pauseTimer() {
-        // 00:06 -> 00:04 paused -> remainingTime === 00:04;
-        // НУЖНО СДЕЛАТЬ ТАК, ЧТОБЫ ПРИ КЛИКЕ НА ПАУЗУ ЗАМОРАЖИВАЛОСЬ ТЕКУЩЕЕ ЗНАЧЕНИЕ ТАЙМЕРА
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-        setIsActive(false);
-    }
-
-    function resetTimer(){
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-        setIsActive(false);
-        setRemainingTime(durations[mode]*1000);
-        setStartTime(0);
-        setEndTime(0);
-    }
+    // Форматирование времени
+    const formatTime = (ms: number): string => {
+        const seconds = Math.floor((ms / 1000) % 60);
+        const minutes = Math.floor((ms / (1000 * 60)) % 60);
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    };
 
     function switchMode  (newMode: 'work' | 'break')  {
-        // resetTimer();
         setMode(newMode);
-        setRemainingTime(durations[newMode]*1000);
-        // setRemainingTime(newMode === 'work' ? durations.work*1000 : durations.break*1000);
-        // setIsAutoplay(false);
+        setTime(durations[newMode]);
+        setFinished(false);
+        setIsRunning(false); // Останавливаем таймер
+    }
 
-        setIsActive(false); // Останавливаем таймер
-    };
+    //New Timer
+    // Инициализация Web Worker
+    useEffect(() => {
+        workerRef.current = new Worker(new URL('../Worker/worker.ts', import.meta.url));
+        workerRef.current.onmessage = (e: MessageEvent) => {
+            const { type, remainingTime } = e.data;
+            if (type === 'tick') {
+                setTime(remainingTime);
+            } else if (type === 'finished') {
+                setIsRunning(false);
+                setFinished(true);
+                setTime(0);
+                if(isAutoplay) {
+                    switchMode(mode === 'work'? 'break': 'work');
+                    setFinished(true);
+
+                }
+                if (audioRef.current) {
+                    audioRef.current.play().catch((error) => {
+                        console.error('Ошибка воспроизведения звука:', error);
+                    });
+                }
+            }
+        };
+
+        return () => {
+            workerRef.current?.terminate();
+        };
+    }, [isAutoplay, mode]);
+
+    // Инициализация аудио
+    useEffect(() => {
+        audioRef.current = new Audio(audioSrc);
+        audioRef.current.preload = 'auto';
+    }, []);
+
+    useEffect(() => {
+        if (isAutoplay && !isRunning && finished) {
+            startTimer();
+        }
+    }, [mode, finished]);
+
 
     return (
         <div className="pomodoro">
             <div className="pomodoro-timer__wrapper">
                 <button onClick={disableFunc} className="close-btn">&times;</button>
-                <h2 className='pomodoro-timer'>{formatTime(remainingTime)}</h2>
-                {/*<div className="mode-controls">*/}
-                {/*    <button*/}
-                {/*        className={mode === 'work' ? 'active-button' : ''} // Added: подсветка активного режима*/}
-                {/*        onClick={() => switchMode('work')}*/}
-                {/*    >*/}
-                {/*        Work (25 min)*/}
-                {/*    </button>*/}
-                {/*    <button*/}
-                {/*        className={mode === 'break' ? 'active-button' : ''}*/}
-                {/*        onClick={() => switchMode('break')}*/}
-                {/*    >*/}
-                {/*        Break (5 min)*/}
-                {/*    </button>*/}
-                {/*</div>*/}
+                <h2 className='pomodoro-timer'>{formatTime(time)}</h2>
                 <div className="switch-box">
                     <span className={`switch-text${mode === 'break' ? ' switch-text--active' : ''}`}>Break</span>
                     <label onChange={() => switchMode(mode === 'break' ? 'work' : 'break')} className="switch-label">
@@ -153,7 +117,7 @@ const Focus = ({disableFunc}:funcProps) => {
                     <button
                         className="control-btn"
                         onClick={() => {
-                            if (isActive) {
+                            if (isRunning) {
                                 pauseTimer();
                                 // setIsActive(!isActive);
                             } else {
@@ -165,7 +129,7 @@ const Focus = ({disableFunc}:funcProps) => {
                     >
                         <img
                             className="icon-btn"
-                            src={isActive ? pause : play}
+                            src={isRunning ? pause : play}
                             alt=""
                         />
                     </button>
@@ -179,15 +143,6 @@ const Focus = ({disableFunc}:funcProps) => {
                     </div>
                     <span className="automatic-wrapper__text"><label htmlFor="automatic">Change timer automatically</label></span>
                 </div>
-                {/*<div>*/}
-                {/*    <input*/}
-                {/*        onClick={() => setIsAutomatic(!isAutomatic)}*/}
-                {/*        type="checkbox"*/}
-                {/*        id="automatic"*/}
-                {/*        checked={isAutomatic}*/}
-                {/*    />*/}
-                {/*    <label htmlFor="automatic">Automatic change timer</label>*/}
-                {/*</div>*/}
             </div>
 
         </div>

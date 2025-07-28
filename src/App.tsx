@@ -118,8 +118,7 @@ function App() {
 
     return (
         <>
-            {/*{focus && <Focus disableFunc={disableInterface}/>}*/}
-            <Timer initialTime = {1500000}></Timer>
+            {focus && <Focus disableFunc={disableInterface}/>}
             <div
                 onClick={() => {
                     setFocus(focus && false);
