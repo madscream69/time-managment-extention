@@ -1,5 +1,5 @@
 import {useState, useEffect, useRef} from 'react';
-import './Focus.css';
+import './Focus.scss';
 import audioSrc from '/sounds/tictictictic.mp3';
 
 import play from '../assets/play-icon.svg';
@@ -11,15 +11,15 @@ interface funcProps{
 }
 
 const Focus = ({disableFunc}:funcProps) => {
-    const durations = { work: 25 * 60*1000, break: 0.05 * 60*1000 }; // Added: длительности для режимов (в секундах)
-    const [mode, setMode] = useState<'work' | 'break'>('work'); // Added: состояние режима
+    const durations = { work: 25 * 60*1000, break: 5 * 60*1000 }; // Added: длительности для режимов (в секундах)
+    const [mode, setMode] = useState<'work' | 'break' | string>(localStorage.getItem('mode') ? localStorage.getItem('mode') :'work'); // Added: состояние режима
     const [isAutoplay, setIsAutoplay] = useState(true);
 
     const [finished, setFinished] = useState<boolean>(false);
 
     //New Timer
 
-    const [time, setTime] = useState(durations[mode]);
+    const [time, setTime] = useState(localStorage.getItem('time') ? Number(localStorage.getItem('time')) : durations[mode]);
     const [isRunning, setIsRunning] = useState(false);
     const workerRef = useRef<Worker | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -99,6 +99,12 @@ const Focus = ({disableFunc}:funcProps) => {
         }
     }, [mode, finished]);
 
+    useEffect(() => {
+
+        localStorage.setItem('time', JSON.stringify(time));
+        localStorage.setItem('mode', mode);
+
+    }, [time]);
 
     return (
         <div className="pomodoro">

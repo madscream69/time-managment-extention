@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.scss';
 import Focus from './components/Focus';
-import Timer from "./components/Timer.tsx";
+import Background from "./components/Background.tsx";
+import Loading from "./components/Loading.tsx";
 
 // Интерфейс для данных Unsplash
 interface Photo {
@@ -21,79 +22,81 @@ interface Photo {
 }
 
 function App() {
-    const [bg, setBg] = useState('');
-    const [dataP, setDataP] = useState<Photo>();
+    // const [bg, setBg] = useState('');
     const [time, setTime] = useState(new Date());
-    const [activeAboutPhoto, SetActiveAboutPhoto] = useState(false);
     const [focus, setFocus] = useState(false);
+    //peredat
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [activeAboutPhoto, SetActiveAboutPhoto] = useState(false);
+    const [dataP, setDataP] = useState<Photo>();
 
-    useEffect(() => {
-        async function getBg(attempt = 1, maxAttempts = 3) {
-            try {
-                setLoading(true);
-                const apiKey = import.meta.env.VITE_UNSPLASH_API_KEY_ACCESS;
-                if (!apiKey) {
-                    throw new Error('Unsplash API key is missing');
-                }
 
-                // Запрос к Unsplash API для получения случайного изображения
-                const url = `https://api.unsplash.com/photos/random?query=natural+mountains+forest+sea+ocean+sunset&orientation=landscape&w=1920&h=1080`;
-
-                const response = await fetch(url, {
-                    method: 'GET',
-                    headers: {
-                        Authorization: `Client-ID ${apiKey}`,
-                    },
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-
-                // Логирование для отладки
-                console.log('Unsplash API response:', data);
-
-                // Проверка наличия результата
-                if (!data || !data.urls) {
-                    if (attempt < maxAttempts) {
-                        console.log(`Attempt ${attempt} failed, retrying...`);
-                        return getBg(attempt + 1, maxAttempts);
-                    }
-                    throw new Error('No valid image found');
-                }
-
-                // Формирование объекта Photo
-                const photo: Photo = {
-                    id: data.id,
-                    width: data.width,
-                    height: data.height,
-                    url: data.links.html, // Ссылка на страницу изображения
-                    alt: data.alt_description || null,
-                    photographer: data.user.name || null,
-                    photographer_url: data.user.links.html || null || undefined,
-                    src: {
-                        original: data.urls.full,
-                        large: data.urls.regular, // ~1080p
-                        medium: data.urls.small,
-                        small: data.urls.thumb,
-                    },
-                };
-
-                console.log('Selected image:', photo);
-                setBg(photo.src.original); // Используем regular для оптимального размера
-                setDataP(photo);
-            } catch (error) {
-                console.error('Fetch error:', error);
-                setError('Failed to load background image');
-            } finally {
-                setLoading(false);
-            }
-        }
-        getBg();
-    }, []);
+    // useEffect(() => {
+    //     async function getBg(attempt = 1, maxAttempts = 3) {
+    //         try {
+    //             setLoading(true);
+    //             const apiKey = import.meta.env.VITE_UNSPLASH_API_KEY_ACCESS;
+    //             if (!apiKey) {
+    //                 throw new Error('Unsplash API key is missing');
+    //             }
+    //
+    //             // Запрос к Unsplash API для получения случайного изображения
+    //             const url = `https://api.unsplash.com/photos/random?query=natural+mountains+forest+sea+ocean+sunset&orientation=landscape&w=1920&h=1080`;
+    //
+    //             const response = await fetch(url, {
+    //                 method: 'GET',
+    //                 headers: {
+    //                     Authorization: `Client-ID ${apiKey}`,
+    //                 },
+    //             });
+    //
+    //             if (!response.ok) {
+    //                 throw new Error(`HTTP error! status: ${response.status}`);
+    //             }
+    //             const data = await response.json();
+    //
+    //             // Логирование для отладки
+    //             console.log('Unsplash API response:', data);
+    //
+    //             // Проверка наличия результата
+    //             if (!data || !data.urls) {
+    //                 if (attempt < maxAttempts) {
+    //                     console.log(`Attempt ${attempt} failed, retrying...`);
+    //                     return getBg(attempt + 1, maxAttempts);
+    //                 }
+    //                 throw new Error('No valid image found');
+    //             }
+    //
+    //             // Формирование объекта Photo
+    //             const photo: Photo = {
+    //                 id: data.id,
+    //                 width: data.width,
+    //                 height: data.height,
+    //                 url: data.links.html, // Ссылка на страницу изображения
+    //                 alt: data.alt_description || null,
+    //                 photographer: data.user.name || null,
+    //                 photographer_url: data.user.links.html || null || undefined,
+    //                 src: {
+    //                     original: data.urls.full,
+    //                     large: data.urls.regular, // ~1080p
+    //                     medium: data.urls.small,
+    //                     small: data.urls.thumb,
+    //                 },
+    //             };
+    //
+    //             console.log('Selected image:', photo);
+    //             setBg(photo.src.original); // Используем regular для оптимального размера
+    //             setDataP(photo);
+    //         } catch (error) {
+    //             console.error('Fetch error:', error);
+    //             setError('Failed to load background image');
+    //         } finally {
+    //             setLoading(false);
+    //         }
+    //     }
+    //     getBg();
+    // }, []);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -106,8 +109,8 @@ function App() {
     const minutes = time.getMinutes();
     const timeString = `${hours < 10 ? `0${hours}` : hours}:${minutes < 10 ? `0${minutes}` : minutes}`;
 
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div>{error}</div>;
+    // if (loading) return <div>Loading...</div>;
+    // if (error) return <div>{error}</div>;
 
     function disableInterface():void {
         document.querySelector('.time__title')?.classList.toggle('disabled');
@@ -126,7 +129,8 @@ function App() {
                 }}
                 className="background"
             >
-                <img className="background-img" src={bg} alt="bg" />
+                <Background loading={loading} setLoading={setLoading} error={error} setError={setError} activeAboutPhoto={activeAboutPhoto} setActiveAboutPhoto={SetActiveAboutPhoto} dataP={dataP} setDataP={setDataP}></Background>
+                {/*<img className="background-img" src={bg} alt="bg" />*/}
                 <div className="onFocus">
                     <button
                         className="focus-btn"
