@@ -1,4 +1,4 @@
-// src/workers/timerWorker.ts
+// src/Worker/worker.ts
 let intervalId: number | null = null;
 let remainingTime: number = 0;
 
